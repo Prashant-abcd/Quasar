@@ -4,7 +4,7 @@
     "slug": "Quasar",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/quasar.png",
+    "icon": "./assets/images/quasar_icon.png",
     "scheme": "quasar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,14 +15,13 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/quasar.png"
+        "foregroundImage": "./assets/images/quasar_icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ],
       "package": "com.prashant.quasar"
     },

@@ -570,7 +570,7 @@ export default function DashboardScreen() {
     { label: 'Height', value: profile?.height ? `${profile.height} cm` : '--', icon: 'human-male-height' },
     { label: 'Current', value: `${currentWeight} kg`, icon: 'scale-bathroom' },
     { label: 'Goal', value: `${goalWeight} kg`, icon: 'target' },
-    { label: 'Timeline', value: profile?.targetEndDate || profile?.targetWeeks ? getTimeLeft(profile).label : '--', icon: 'calendar-clock' },
+    { label: 'Timeline', value: profile?.targetWeeks ? `${profile.targetWeeks} weeks` : '--', icon: 'calendar-clock' },
   ];
 
   return (
@@ -2886,24 +2886,24 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.45)', fontWeight: '400',
   },
   nbCheckBtns: {
-    flexDirection: 'row', gap: 10,
+    flexDirection: 'column', gap: 10,
   },
   nbCheckBtnGood: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 9, borderRadius: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 12, borderRadius: 12,
     backgroundColor: 'rgba(74,222,128,0.08)',
     borderWidth: 1, borderColor: 'rgba(74,222,128,0.2)',
   },
   nbCheckBtnGoodText: {
-    fontSize: 12, fontWeight: '700', color: '#4ADE80',
+    fontSize: 14, fontWeight: '700', color: '#4ADE80',
   },
   nbCheckBtnOver: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 9, borderRadius: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 12, borderRadius: 12,
     backgroundColor: 'rgba(251,146,60,0.08)',
     borderWidth: 1, borderColor: 'rgba(251,146,60,0.2)',
   },
   nbCheckBtnOverText: {
-    fontSize: 12, fontWeight: '700', color: '#FB923C',
+    fontSize: 14, fontWeight: '700', color: '#FB923C',
   },
 });

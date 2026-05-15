@@ -460,7 +460,7 @@ export default function OnboardingScreen() {
         <TextInput
           autoCapitalize="words"
           style={styles.input}
-          placeholder="Prashant Kumar"
+          placeholder="Your Name"
           placeholderTextColor="rgba(255,190,175,0.38)"
           value={name}
           onChangeText={setName}

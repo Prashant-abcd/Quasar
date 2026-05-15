@@ -1196,14 +1196,14 @@ const st = StyleSheet.create({
     borderWidth: 1, marginBottom: 16,
   },
   nbCheckText: { fontSize: 13, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  nbCheckBtns: { flexDirection: 'row', gap: 10 },
+  nbCheckBtns: { flexDirection: 'column', gap: 10 },
   nbCheckBtnGood: {
-    flex: 1, backgroundColor: '#16A34A', borderRadius: 12,
-    paddingVertical: 10, alignItems: 'center',
+    backgroundColor: '#16A34A', borderRadius: 12,
+    paddingVertical: 12, alignItems: 'center',
   },
   nbCheckBtnOver: {
-    flex: 1, backgroundColor: '#EA580C', borderRadius: 12,
-    paddingVertical: 10, alignItems: 'center',
+    backgroundColor: '#EA580C', borderRadius: 12,
+    paddingVertical: 12, alignItems: 'center',
   },
-  nbCheckBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  nbCheckBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });
