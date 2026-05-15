@@ -4,7 +4,7 @@
     "slug": "Quasar",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/quasar_icon.png",
+    "icon": "./assets/images/launcherIcon.png",
     "scheme": "quasar",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,7 +15,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/quasar_icon.png"
+        "foregroundImage": "./assets/images/launcherIcon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
