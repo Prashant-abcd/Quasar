@@ -11,12 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { doc, getDoc, collection, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig';
-import { signOut } from 'firebase/auth';
+import { signOut, deleteUser } from 'firebase/auth';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
@@ -258,6 +259,41 @@ export default function DashboardScreen() {
     } finally {
       setLoggingOut(false);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account and all your data? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoggingOut(true);
+              const user = auth.currentUser;
+              if (user) {
+                await deleteDoc(doc(db, 'users', user.uid, 'profile', 'data'));
+                await deleteUser(user);
+              }
+              setLogoutVisible(false);
+            } catch (error) {
+              console.log('Delete account error:', error.message);
+              if (error.code === 'auth/requires-recent-login') {
+                Alert.alert("Authentication Required", "For security reasons, please log out and log back in before deleting your account.");
+                setLogoutVisible(false);
+              } else {
+                Alert.alert("Error", "Failed to delete account. Please try again or contact support.");
+              }
+            } finally {
+              setLoggingOut(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const resetCheatForm = () => {
@@ -1445,9 +1481,9 @@ export default function DashboardScreen() {
       >
         <View style={styles.logoutOverlay}>
           <View style={styles.logoutCard}>
-            <View style={styles.logoutIconWrap}>
-              <MaterialCommunityIcons name="logout-variant" size={24} color="#ff8f86" />
-            </View>
+            <TouchableOpacity onPress={handleDeleteAccount} style={styles.logoutIconWrap}>
+              <MaterialCommunityIcons name="delete-outline" size={24} color="#ff8f86" />
+            </TouchableOpacity>
 
             <Text style={styles.logoutTitle}>{logoutQuote.title}</Text>
             <Text style={styles.logoutSubtitle}>{logoutQuote.subtitle}</Text>
