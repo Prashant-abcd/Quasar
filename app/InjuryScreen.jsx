@@ -1156,13 +1156,18 @@ export default function InjuryScreen() {
           {/* Daily check-in */}
           {!todayNBAnswered && (
             <FadeCard delay={260} style={[s.nbCheckCard, { borderColor: pal.cardBorder }]}>
-              <Text style={[s.nbCheckText, { color: pal.text }]}>did you stay within your calorie target today?</Text>
+              <View style={s.nbCheckRow}>
+                <MaterialCommunityIcons name="chart-timeline-variant" size={20} color={pal.textGray} />
+                <Text style={s.nbCheckText}>did you stay within your calorie target today?</Text>
+              </View>
               <View style={s.nbCheckBtns}>
                 <TouchableOpacity style={s.nbCheckBtnGood} onPress={() => confirmNBAnswer(false)}>
-                  <Text style={s.nbCheckBtnText}>✓  stayed within</Text>
+                  <MaterialCommunityIcons name="check" size={16} color="#16A34A" />
+                  <Text style={s.nbCheckBtnGoodText}>stayed within</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.nbCheckBtnOver} onPress={() => confirmNBAnswer(true)}>
-                  <Text style={s.nbCheckBtnText}>↑  went over</Text>
+                  <MaterialCommunityIcons name="trending-up" size={16} color="#EA580C" />
+                  <Text style={s.nbCheckBtnOverText}>went over</Text>
                 </TouchableOpacity>
               </View>
             </FadeCard>
@@ -1506,17 +1511,28 @@ const s = StyleSheet.create({
   // NB check-in
   nbCheckCard: {
     backgroundColor: '#fff', borderRadius: 18, padding: 16,
-    borderWidth: 1, marginBottom: 16,
+    borderWidth: 1, marginBottom: 16, gap: 14,
   },
-  nbCheckText: { fontSize: 13, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  nbCheckBtns: { flexDirection: 'column', gap: 10 },
+  nbCheckRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  nbCheckText: {
+    flex: 1, fontSize: 13, lineHeight: 18,
+    color: '#6B7280', fontWeight: '500', textAlign: 'left',
+  },
+  nbCheckBtns: { flexDirection: 'row', gap: 10 },
   nbCheckBtnGood: {
-    backgroundColor: '#16A34A', borderRadius: 12,
-    paddingVertical: 12, alignItems: 'center',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: 'rgba(22,163,74,0.1)',
+    borderRadius: 12, paddingVertical: 14,
+    borderWidth: 1, borderColor: 'rgba(22,163,74,0.3)',
   },
   nbCheckBtnOver: {
-    backgroundColor: '#EA580C', borderRadius: 12,
-    paddingVertical: 12, alignItems: 'center',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: 'rgba(234,88,12,0.1)',
+    borderRadius: 12, paddingVertical: 14,
+    borderWidth: 1, borderColor: 'rgba(234,88,12,0.3)',
   },
-  nbCheckBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  nbCheckBtnGoodText: { color: '#16A34A', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+  nbCheckBtnOverText: { color: '#EA580C', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
 });

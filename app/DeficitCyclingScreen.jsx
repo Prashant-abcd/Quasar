@@ -1624,11 +1624,11 @@ const st = StyleSheet.create({
   choiceStatLbl: { fontSize: 9, color: '#6B7280', marginTop: 2 },
 
   warningBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, padding: 12, borderWidth: 1, backgroundColor: '#FEF2F2', marginBottom: 8 },
-  nbCheckCard: { borderRadius: 16, borderWidth: 1, backgroundColor: '#EFF6FF', padding: 14, marginBottom: 14, gap: 12 },
-  nbCheckRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  nbCheckText: { flex: 1, fontSize: 12, lineHeight: 18 },
-  nbCheckBtns: { flexDirection: 'column', gap: 10 },
-  nbCheckBtnGood: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
-  nbCheckBtnOver: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
-  nbCheckBtnText: { fontSize: 14, fontWeight: '700' },
+  nbCheckCard: { borderRadius: 16, borderWidth: 1, backgroundColor: '#EFF6FF', padding: 16, marginBottom: 16, gap: 14 },
+  nbCheckRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  nbCheckText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: '500' },
+  nbCheckBtns: { flexDirection: 'row', gap: 10 },
+  nbCheckBtnGood: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, borderWidth: 1 },
+  nbCheckBtnOver: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, borderWidth: 1 },
+  nbCheckBtnText: { fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
 });

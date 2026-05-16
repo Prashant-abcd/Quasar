@@ -532,12 +532,34 @@ export default function DashboardScreen() {
         { merge: true }
       );
 
+      // ── Auto-log NB "went over" — cheat day = exceeded target by definition ──
+      if (!todayNBAnswered) {
+        try {
+          await writeNBRow(userId, getLocalDateKey(), true, 'user_explicit', profile);
+          markNBAnswered();
+          setTodayNBAnswered(true);
+        } catch (nbErr) {
+          console.log('Cheat day NB log error:', nbErr.message);
+        }
+      }
+
       setProfile((prev) => ({
         ...(prev || {}),
         cheatCompensation: cheatDraft,
       }));
       setCheatVisible(false);
       resetCheatForm();
+
+      // ── Show confirmation dialog ──
+      showDialog({
+        title: 'cheat day locked in 🔥',
+        message:
+          "we've automatically logged today as 'went over' for your adherence data — no need to answer the prompt.\n\n" +
+          "your warrior protocol streak is unaffected (protein is tracked separately), but today's adherence score won't count in your favour.\n\n" +
+          "compensation starts tomorrow. enjoy the day, the math is handled.",
+        variant: 'info',
+        actions: [{ label: 'got it', onPress: () => {} }],
+      });
     } catch (error) {
       console.log('Cheat day error:', error.message);
     } finally {
@@ -701,7 +723,7 @@ export default function DashboardScreen() {
             {!todayNBAnswered && (
               <View style={styles.nbCheckCard}>
                 <View style={styles.nbCheckRow}>
-                  <MaterialCommunityIcons name="chart-timeline-variant" size={16} color="rgba(255,255,255,0.35)" />
+                  <MaterialCommunityIcons name="chart-timeline-variant" size={20} color="rgba(255,255,255,0.5)" />
                   <Text style={styles.nbCheckText}>
                     {"not feeling like logging every meal today? that's okay - just let us know how you did overall and we'll use it to look out for you"}
                   </Text>
@@ -712,7 +734,7 @@ export default function DashboardScreen() {
                     onPress={() => confirmNBAnswer(false)}
                     activeOpacity={0.8}
                   >
-                    <MaterialCommunityIcons name="check" size={14} color="#4ADE80" />
+                    <MaterialCommunityIcons name="check" size={16} color="#4ADE80" />
                     <Text style={styles.nbCheckBtnGoodText}>stayed within</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -720,7 +742,7 @@ export default function DashboardScreen() {
                     onPress={() => confirmNBAnswer(true)}
                     activeOpacity={0.8}
                   >
-                    <MaterialCommunityIcons name="trending-up" size={14} color="#FB923C" />
+                    <MaterialCommunityIcons name="trending-up" size={16} color="#FB923C" />
                     <Text style={styles.nbCheckBtnOverText}>went over</Text>
                   </TouchableOpacity>
                 </View>
@@ -2874,34 +2896,34 @@ const styles = StyleSheet.create({
 
   nbCheckCard: {
     borderRadius: 16, borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    padding: 14, marginBottom: 14, gap: 12,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    padding: 16, marginBottom: 16, gap: 14,
   },
   nbCheckRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
   },
   nbCheckText: {
-    flex: 1, fontSize: 12, lineHeight: 18,
-    color: 'rgba(255,255,255,0.45)', fontWeight: '400',
+    flex: 1, fontSize: 13, lineHeight: 18,
+    color: 'rgba(255,255,255,0.6)', fontWeight: '500',
   },
   nbCheckBtns: {
-    flexDirection: 'column', gap: 10,
+    flexDirection: 'row', gap: 10,
   },
   nbCheckBtnGood: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: 'rgba(74,222,128,0.08)',
-    borderWidth: 1, borderColor: 'rgba(74,222,128,0.2)',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: 'rgba(74,222,128,0.15)',
+    borderRadius: 12, paddingVertical: 14,
+    borderWidth: 1, borderColor: 'rgba(74,222,128,0.3)',
   },
   nbCheckBtnGoodText: {
-    fontSize: 14, fontWeight: '700', color: '#4ADE80',
+    color: '#4ADE80', fontSize: 13, fontWeight: '800', letterSpacing: 0.5,
   },
   nbCheckBtnOver: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: 'rgba(251,146,60,0.08)',
-    borderWidth: 1, borderColor: 'rgba(251,146,60,0.2)',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: 'rgba(251,146,60,0.15)',
+    borderRadius: 12, paddingVertical: 14,
+    borderWidth: 1, borderColor: 'rgba(251,146,60,0.3)',
   },
   nbCheckBtnOverText: {
     fontSize: 14, fontWeight: '700', color: '#FB923C',

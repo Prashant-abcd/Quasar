@@ -4,7 +4,7 @@
  * Daily protein goal = currentWeight × 1.8 g
  * Badge score: +10 per day protein goal met via meal logging
  * Shield: awarded every 5th completion — protects streak on a missed day
- * Protected mode (LM / Injury): streak days advance but score stays frozen
+ * Protected mode (LM / Injury / Cheat Day): streak days advance but score stays frozen
  */
 
 // ─── Badge Definitions ────────────────────────────────────────────────────────
@@ -157,7 +157,8 @@ export function processDailyStreak(rawStreak, proteinConsumed, profile, todayKey
   const s = { ...rawStreak };
   let updated = false;
 
-  const isProtected = !!(profile?.loadManagement?.active || profile?.activeInjury?.active);
+  const isCheatDay = profile?.cheatCompensation?.cheatDateKey === todayKey;
+  const isProtected = !!(profile?.loadManagement?.active || profile?.activeInjury?.active || isCheatDay);
   const alreadyDoneToday = s.lastActiveDate === todayKey;
 
   // ── Step 1: handle any gap since last active date ──────────────────────────
