@@ -1,5 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+
+GoogleSignin.configure({
+  webClientId: '132545595493-p7tds1np9iff9ioqdi4hpdta9svi0h3g.apps.googleusercontent.com',
+});
 import { useState, useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
@@ -113,6 +118,30 @@ export default function LoginScreen() {
       duration: 250, useNativeDriver: false,
     }).start();
   }, [emailGlow, focusedField]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const { data } = await GoogleSignin.signIn();
+      const googleCredential = GoogleAuthProvider.credential(data.idToken);
+      
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+      await signInWithCredential(auth, googleCredential);
+    } catch (error) {
+      setLoading(false);
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        return;
+      }
+      showDialog({
+        title: 'Google Sign-In Failed',
+        message: error.message || 'An unexpected error occurred during Google Sign-In.',
+        variant: 'error',
+      });
+    }
+  };
 
   useEffect(() => {
     Animated.timing(passGlow, {
@@ -399,6 +428,21 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </FadeSlide>
 
+        {/* Google Sign-In Button */}
+        <FadeSlide delay={525}>
+          <TouchableOpacity
+            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            onPress={handleGoogleLogin}
+            disabled={loading}
+            activeOpacity={0.88}
+          >
+            <View style={styles.googleButtonContent}>
+              <MaterialCommunityIcons name="google" size={20} color={Q.black} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </View>
+          </TouchableOpacity>
+        </FadeSlide>
+
         {/* Sign-up nudge */}
         <FadeSlide delay={550}>
           <TouchableOpacity
@@ -536,6 +580,18 @@ const styles = StyleSheet.create({
   buttonShine: { position: 'absolute', top: 0, left: 0, right: 0, height: 28, borderTopLeftRadius: 18, borderTopRightRadius: 18 },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   buttonText: { color: Q.white, fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+
+  googleButton: {
+    marginHorizontal: 24, marginTop: 12, borderRadius: 18,
+    backgroundColor: Q.pureWhite, overflow: 'hidden',
+    shadowColor: Q.pureWhite, shadowOpacity: 0.25, shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 }, elevation: 8,
+  },
+  googleButtonContent: { 
+    paddingVertical: 16, paddingHorizontal: 18,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 
+  },
+  googleButtonText: { color: Q.black, fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
 
   secondaryAction: {
     marginHorizontal: 24, marginTop: 14, marginBottom: 24,

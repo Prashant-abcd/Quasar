@@ -1,89 +1,161 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
-
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.12.1/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.12.1/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.12.1/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
-
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
-    </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar - Adaptive Calorie Tracking</title>
+    <link rel="icon" type="image/png" href="launcherIcon.png">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            position: relative;
         }
-      });
+        
+        .hero-logo {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 30px rgba(255, 64, 48, 0.6));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto 40px auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 100px;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-orange) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3.5rem; }
+            .hero p { font-size: 1.2rem; }
+            .hero { min-height: 70vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <img src="launcherIcon.png" alt="Quasar Logo" class="hero-logo animate-fade-in">
+            <h1 class="text-gradient animate-fade-in delay-1">Quasar</h1>
+            <p class="text-muted animate-fade-in delay-2">The smart, adaptive calorie tracker that automatically adjusts to your metabolism to break plateaus.</p>
+            <div class="animate-fade-in delay-3">
+                <a href="#" class="btn-primary pulse">Download on Google Play</a>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="mb-12">
+            <h2 class="text-center text-gradient mb-8" style="font-size: 3rem;">Unleash Your Metabolism</h2>
+            
+            <div class="features-grid">
+                
+                <!-- Feature 1 -->
+                <div class="glass-card animate-fade-in">
+                    <div class="feature-icon">🔥</div>
+                    <h3 class="mb-2">Thermic Engine</h3>
+                    <p class="text-muted">Quasar constantly calculates your actual Total Daily Energy Expenditure (TDEE) based on your weight inputs and calorie logs, adjusting your targets automatically to prevent stalls.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card animate-fade-in delay-1">
+                    <div class="feature-icon">🌊</div>
+                    <h3 class="mb-2">Deficit Cycling</h3>
+                    <p class="text-muted">Prevent metabolic adaptation. Quasar dynamically cycles your calories and incorporates planned diet breaks to keep your hormones optimized and fat loss consistent.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card animate-fade-in delay-2">
+                    <div class="feature-icon">⚕️</div>
+                    <h3 class="mb-2">Load Management</h3>
+                    <p class="text-muted">Injured or taking a deload week? Log your load status and Quasar will instantly adjust your caloric targets to match your reduced activity levels, preventing unwanted weight gain.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass-card animate-fade-in">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="mb-2">A.I. Check-ins</h3>
+                    <p class="text-muted">Using advanced Naive Bayes classification, Quasar analyzes your qualitative check-in responses to provide highly personalized, actionable suggestions to keep your fitness journey on track.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="glass-card animate-fade-in delay-1">
+                    <div class="feature-icon">🥩</div>
+                    <h3 class="mb-2">Protein Streaks</h3>
+                    <p class="text-muted">Consistency is key. Build and track your daily protein adherence streaks. Hit your target to keep the fire alive and maximize your muscle retention.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="glass-card animate-fade-in delay-2">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="mb-2">Dynamic Macros</h3>
+                    <p class="text-muted">Every weekly check-in, Quasar automatically recalculates your precise macro splits (Proteins, Fats, Carbs) based on your chosen aggressive or steady trajectory.</p>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Global Footer -->
+    <footer>
+        <nav>
+            <a href="/privacy.html">Privacy Policy</a>
+            <a href="/terms.html">Terms of Service</a>
+            <a href="/delete-account.html">Data Deletion</a>
+        </nav>
+        <p class="text-sm mt-8">© 2026 Quasar App. All rights reserved.</p>
+        <p class="text-sm">Support: <a href="mailto:supportquaser@gmail.com">supportquaser@gmail.com</a></p>
+    </footer>
+
+    <!-- Intersection Observer for Scroll Animations -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                        entry.target.style.opacity = 1;
+                    }
+                });
+            });
+
+            // Pause animations until scrolled into view (except hero)
+            document.querySelectorAll('.features-grid .animate-fade-in').forEach(el => {
+                el.style.opacity = 0;
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            });
+        });
     </script>
-  </body>
+</body>
 </html>

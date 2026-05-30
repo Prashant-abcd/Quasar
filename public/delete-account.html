@@ -4,32 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Deletion Request - Quasar</title>
+    <link rel="icon" type="image/png" href="launcherIcon.png">
+    <link rel="stylesheet" href="styles.css">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
-        h1 { color: #BF360C; }
-        .card { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-top: 20px; }
-        .btn { display: inline-block; background: #BF360C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
+        .warning-text { color: var(--primary-orange); }
+        .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; }
     </style>
 </head>
 <body>
-    <h1>Account Deletion Request</h1>
-    <p>We're sorry to see you go! At Quasar, we respect your privacy and your right to control your data.</p>
-    
-    <div class="card">
-        <h2>How to delete your account and data:</h2>
-        <p><strong>Option 1: Full Account Deletion (Inside the app)</strong><br>
-        You can delete your account and all associated data instantly at any time by pressing the Logout button in the top right corner of the dashboard, and then tapping the Trash Bin icon on the confirmation screen.</p>
 
-        <p><strong>Option 2: Partial Data Deletion (Via Email Request)</strong><br>
-        If you want to keep your account but delete specific pieces of data (such as specific weight logs, meal history, or profile stats), you can request a manual partial deletion by emailing our support team. Please specify exactly what you want deleted and provide the email address you registered with.</p>
+    <main class="container legal-content">
+        <div class="glass-card animate-fade-in text-center mb-8">
+            <h1 class="text-gradient">Account Deletion Request</h1>
+            <p class="text-muted" style="font-size: 1.2rem;">We're sorry to see you go! At Quasar, we respect your privacy and your right to control your data.</p>
+        </div>
         
-        <ul>
-            <li><strong>Data Deleted:</strong> Your profile, email address, weight logs, and daily meal/macro data will be permanently wiped from our secure database.</li>
-            <li><strong>Data Kept:</strong> No personal or health data is retained after deletion.</li>
-        </ul>
+        <div class="options-grid">
+            <!-- Option 1 Card -->
+            <div class="glass-card animate-fade-in delay-1">
+                <h2 class="warning-text mb-4">Option 1: Profile & Progress Deletion (In-App)</h2>
+                <p class="text-muted mb-4">You can instantly wipe your active profile progress, history, and records directly from inside the app.</p>
+                <ol class="text-muted" style="padding-left: 20px; margin-bottom: 20px;">
+                    <li>Open Quasar and go to the <strong>Dashboard</strong>.</li>
+                    <li>Tap the <strong>Logout icon</strong> in the top right corner.</li>
+                    <li>Tap the <strong>Trash Bin icon</strong> on the confirmation popup.</li>
+                </ol>
+                <p class="text-sm"><strong>Data Deleted:</strong> Your profile settings, daily meal logs, macronutrient history, and weight logs will be permanently deleted from our database. <br><br><span class="warning-text">Note:</span> For security reasons, this deletes your user database document but may leave your authentication/login record active in the system. For a complete purge of your login records, please see Option 2.</p>
+            </div>
 
-        <a href="mailto:supportquaser@gmail.com?subject=Partial%20Data%20Deletion%20Request&body=Please%20delete%20the%20following%20data%20from%20my%20Quasar%20account:%0A%0A[PLEASE%20TYPE%20WHAT%20YOU%20WANT%20DELETED%20HERE]%0A%0AMy%20registered%20Quasar%20email%20address%20is%3A%20[PLEASE%20TYPE%20YOUR%20REGISTERED%20EMAIL%20HERE]" class="btn">Request Partial Deletion via Email</a>
-        <p style="font-size: 0.9em; color: #666; margin-top: 15px;"><em>(If the button above does not work on your computer, please email <strong>supportquaser@gmail.com</strong> directly with your request and registered email address.)</em></p>
-    </div>
+            <!-- Option 2 Card -->
+            <div class="glass-card animate-fade-in delay-2">
+                <h2 class="warning-text mb-4">Option 2: Complete Account & Auth Deletion</h2>
+                <p class="text-muted mb-4">To completely purge your entire account, including your secure authentication/login credentials and all user logs, you can request a manual deletion by emailing our support team.</p>
+                
+                <p class="text-muted mb-4">We will verify your ownership and completely delete your account and login credentials within 24 hours.</p>
+
+                <div class="text-center mt-8">
+                    <a href="mailto:supportquaser@gmail.com?subject=Full%20Account%20Deletion%20Request&body=Please%20completely%20delete%20my%20Quasar%20account%20and%20all%20associated%20data.%0A%0AMy%20registered%20Quasar%20email%20address%20is%3A%20[PLEASE%20TYPE%20YOUR%20REGISTERED%20EMAIL%20HERE]" class="btn-primary pulse">Request Full Account Purge</a>
+                </div>
+                
+                <p class="text-sm text-center mt-4"><em>(If the button above does not work, please email <strong>supportquaser@gmail.com</strong> directly with your request and registered email address.)</em></p>
+            </div>
+        </div>
+
+        <!-- Important Restart Note -->
+        <div class="glass-card animate-fade-in delay-3 mt-8" style="border: 1px dashed var(--primary-orange); background: rgba(255, 64, 48, 0.05); text-align: left;">
+            <h3 class="warning-text mb-2" style="display: flex; align-items: center; gap: 8px;">
+                ⚠️ Important: Action Required After Deletion
+            </h3>
+            <p class="text-muted" style="font-size: 0.95rem; line-height: 1.6;">
+                Once you perform the in-app profile deletion (Option 1) or receive your complete account deletion confirmation email (Option 2), please <strong>fully close and restart the Quasar app</strong>. 
+                <br><br>
+                This clears any cached active sessions, brings you back to the fresh <strong>Login Screen</strong>, and avoids getting stuck on the Onboarding flow (which has no back button).
+            </p>
+        </div>
+
+        <div class="text-center mt-12 animate-fade-in delay-3">
+            <a href="/" class="btn-primary" style="background: transparent; border: 1px solid var(--primary-red);">Return Home</a>
+        </div>
+    </main>
+
+    <footer>
+        <nav>
+            <a href="/privacy.html">Privacy Policy</a>
+            <a href="/terms.html">Terms of Service</a>
+            <a href="/delete-account.html">Data Deletion</a>
+        </nav>
+        <p class="text-sm mt-8">© 2026 Quasar App. All rights reserved.</p>
+        <p class="text-sm">Support: <a href="mailto:supportquaser@gmail.com">supportquaser@gmail.com</a></p>
+    </footer>
+
 </body>
 </html>

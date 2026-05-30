@@ -23,7 +23,8 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "package": "com.prashant.quasar"
+      "package": "com.prashant.quasar",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -46,7 +47,8 @@
           "cameraPermission": "Allow Quasar to scan food barcodes"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

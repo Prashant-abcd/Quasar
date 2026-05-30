@@ -13,7 +13,8 @@ import {
   Linking,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { auth } from '../config/firebaseConfig';
 import { useRouter } from 'expo-router';
 import AuthScreenShell from '../components/auth/AuthScreenShell';
@@ -166,22 +167,36 @@ export default function SignupScreen() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await sendEmailVerification(userCredential.user);
-      await signOut(auth);
+      // We no longer sign the user out here. They remain authenticated but UNVERIFIED.
+
+      const checkVerification = async () => {
+        if (auth.currentUser) {
+          await auth.currentUser.reload();
+          if (auth.currentUser.emailVerified) {
+            // _layout.jsx will automatically detect the verified state and route to Onboarding!
+          } else {
+            showDialog({
+              title: 'Not verified yet',
+              message: 'We checked, but your email still isn\'t verified. Please click the link we sent to your email and try again.',
+              variant: 'warning',
+              actions: [{
+                label: 'Check again',
+                tone: 'primary',
+                onPress: checkVerification,
+              }],
+            });
+          }
+        }
+      };
 
       showDialog({
         title: 'Check your email',
-        message: `A verification link has been sent to ${email}. Verify it first, then come back and log in.\n\ncan't find it? check your spam or junk folder — firebase emails often land there.`,
+        message: `A verification link has been sent to ${email}. Verify it first, then tap the button below to continue.\n\nCan't find it? Check your spam or junk folder.`,
         variant: 'success',
         actions: [{
-          label: 'Back to login',
+          label: "I've verified it!",
           tone: 'primary',
-          onPress: () => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/LoginScreen');
-            }
-          },
+          onPress: checkVerification,
         }],
       });
     } catch (error) {
@@ -203,6 +218,30 @@ export default function SignupScreen() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    try {
+      setLoading(true);
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const { data } = await GoogleSignin.signIn();
+      const googleCredential = GoogleAuthProvider.credential(data.idToken);
+      
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+      await signInWithCredential(auth, googleCredential);
+    } catch (error) {
+      setLoading(false);
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        return;
+      }
+      showDialog({
+        title: 'Google Sign-Up Failed',
+        message: error.message || 'An unexpected error occurred during Google Sign-Up.',
+        variant: 'error',
+      });
     }
   };
 
@@ -481,6 +520,21 @@ export default function SignupScreen() {
           </TouchableOpacity>
         </FadeSlide>
 
+        {/* Google Sign-In Button */}
+        <FadeSlide delay={520}>
+          <TouchableOpacity
+            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            onPress={handleGoogleSignup}
+            disabled={loading}
+            activeOpacity={0.88}
+          >
+            <View style={styles.googleButtonContent}>
+              <MaterialCommunityIcons name="google" size={20} color={Q.black} />
+              <Text style={styles.googleButtonText}>Sign up with Google</Text>
+            </View>
+          </TouchableOpacity>
+        </FadeSlide>
+
         {/* Security note */}
         <FadeSlide delay={540}>
           <View style={styles.securityNote}>
@@ -636,6 +690,18 @@ const styles = StyleSheet.create({
   buttonShine: { position: 'absolute', top: 0, left: 0, right: 0, height: 28, borderTopLeftRadius: 18, borderTopRightRadius: 18 },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   buttonText: { color: Q.white, fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+
+  googleButton: {
+    marginHorizontal: 24, marginTop: 12, borderRadius: 18,
+    backgroundColor: Q.pureWhite, overflow: 'hidden',
+    shadowColor: Q.pureWhite, shadowOpacity: 0.25, shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 }, elevation: 8,
+  },
+  googleButtonContent: { 
+    paddingVertical: 16, paddingHorizontal: 18,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 
+  },
+  googleButtonText: { color: Q.black, fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
 
   securityNote: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
