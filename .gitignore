@@ -61,3 +61,5 @@ firebase/keys.txt
 # Release signing
 *.keystore
 !android/app/debug.keystore
+
+credentials.json

@@ -13,7 +13,7 @@ import {
   Linking,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword, sendEmailVerification, signOut, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { auth } from '../config/firebaseConfig';
 import { useRouter } from 'expo-router';
@@ -21,6 +21,10 @@ import AuthScreenShell from '../components/auth/AuthScreenShell';
 import AppAlertDialog from '../components/ui/AppAlertDialog';
 import useAppDialog from '../hooks/useAppDialog';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../constants/legal';
+
+GoogleSignin.configure({
+  webClientId: '132545595493-p7tds1np9iff9ioqdi4hpdta9svi0h3g.apps.googleusercontent.com',
+});
 
 const { width: SW } = Dimensions.get('window');
 
@@ -173,7 +177,10 @@ export default function SignupScreen() {
         if (auth.currentUser) {
           await auth.currentUser.reload();
           if (auth.currentUser.emailVerified) {
-            // _layout.jsx will automatically detect the verified state and route to Onboarding!
+            // Force onAuthStateChanged to re-fire so _layout.jsx detects the verified state
+            const currentEmail = auth.currentUser.email;
+            await signOut(auth);
+            await signInWithEmailAndPassword(auth, currentEmail, password);
           } else {
             showDialog({
               title: 'Not verified yet',
