@@ -348,6 +348,10 @@ export default function MealLogScreen() {
   const [saving, setSaving] = useState(false);
   const [cravingTip] = useState(() => getCravingTip());
   const [cravingVisible, setCravingVisible] = useState(true);
+  const [aiMode, setAiMode] = useState(false);
+  const [aiDescription, setAiDescription] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
   const [activeProfile, setActiveProfile] = useState(null);
   const { showDialog, dialogProps } = useAppDialog();
 
@@ -368,7 +372,7 @@ export default function MealLogScreen() {
   const cardOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (selectedFood) {
+    if (selectedFood || aiResult) {
       cardAnim.setValue(60);
       cardOpacity.setValue(0);
       Animated.parallel([
@@ -376,7 +380,7 @@ export default function MealLogScreen() {
         Animated.timing(cardOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
       ]).start();
     }
-  }, [cardAnim, cardOpacity, selectedFood]);
+  }, [cardAnim, cardOpacity, selectedFood, aiResult]);
 
   useEffect(() => {
     const loadRememberedProducts = async () => {
@@ -503,6 +507,9 @@ export default function MealLogScreen() {
     setSelectedSize(food.sizes ? food.sizes[1] || food.sizes[0] : null);
     setCustomGrams('');
     setUseCustomGrams(false);
+    setAiMode(false);
+    setAiResult(null);
+    setAiDescription('');
   };
 
   const getEffectiveWeight = () => {
@@ -581,6 +588,111 @@ export default function MealLogScreen() {
     }
   };
 
+  // ── AI Describe ────────────────────────────────────────────────────────────
+  const analyzeWithAI = async (description) => {
+    setAiLoading(true);
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-20250414',
+          max_tokens: 300,
+          system: 'You are a nutritionist AI. The user describes a meal they ate. Estimate the total calories and macronutrients. Return ONLY valid JSON in this exact format, no other text: {"foodName":"short meal name","calories":integer,"protein":number,"carbs":number,"fat":number,"breakdown":"item1 (~Xkcal), item2 (~Ykcal)"}. Use ICMR-NIN data for Indian foods. Be realistic with typical Indian home-cooked portions. Round calories to nearest integer, macros to 1 decimal.',
+          messages: [{ role: 'user', content: description }],
+        }),
+      });
+
+      const data = await response.json();
+      const text = data.content?.[0]?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON found');
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      if (!parsed.calories || !parsed.foodName) throw new Error('Invalid response');
+
+      setAiResult({
+        foodName: parsed.foodName,
+        calories: Math.round(parsed.calories),
+        protein: Math.round((parsed.protein || 0) * 10) / 10,
+        carbs: Math.round((parsed.carbs || 0) * 10) / 10,
+        fat: Math.round((parsed.fat || 0) * 10) / 10,
+        breakdown: parsed.breakdown || '',
+      });
+    } catch (error) {
+      showDialog({
+        title: 'Could not analyze meal',
+        message: 'AI couldn\'t process that description. Try being more specific about portions and food items.',
+        variant: 'error',
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAISave = async () => {
+    if (!aiResult) return;
+    setSaving(true);
+    try {
+      const userId = auth.currentUser.uid;
+      const today = getLocalDateKey();
+      await addDoc(collection(db, 'users', userId, 'logs', today, 'meals'), {
+        foodName: aiResult.foodName,
+        calories: aiResult.calories,
+        protein: aiResult.protein,
+        carbs: aiResult.carbs,
+        fat: aiResult.fat,
+        grams: 0,
+        mealType,
+        loggedAt: new Date().toISOString(),
+        source: 'ai-describe',
+      });
+
+      const isTE = activeProfile?.thermicEngine?.active;
+      if (isTE) {
+        const p = aiResult.protein;
+        const c = aiResult.carbs;
+        const f = aiResult.fat;
+        const pTEF = Math.round(p * 4 * 0.25);
+        const cTEF = Math.round(c * 4 * 0.08);
+        const fTEF = Math.round(f * 9 * 0.02);
+        const totalTEF = pTEF + cTEF + fTEF;
+        const netCal = aiResult.calories - totalTEF;
+        showDialog({
+          title: 'Meal logged — TEF applied!',
+          message: `Gross: ${aiResult.calories} kcal\n\nTEF Breakdown:\n  Protein (${p}g): \u2212${pTEF} kcal (25%)\n  Carbs (${c}g): \u2212${cTEF} kcal (8%)\n  Fat (${f}g): \u2212${fTEF} kcal (2%)\n\nTotal refund: +${totalTEF} kcal\nNet impact: ${netCal} kcal`,
+          variant: 'success',
+          actions: [
+            { label: 'Log another', tone: 'secondary', onPress: () => { setAiMode(false); setAiResult(null); setAiDescription(''); } },
+            { label: 'Done', tone: 'primary', onPress: () => router.back() },
+          ],
+        });
+      } else {
+        showDialog({
+          title: 'Meal logged',
+          message: `${aiResult.calories} kcal added to ${mealType}.`,
+          variant: 'success',
+          actions: [
+            { label: 'Log another', tone: 'secondary', onPress: () => { setAiMode(false); setAiResult(null); setAiDescription(''); } },
+            { label: 'Done', tone: 'primary', onPress: () => router.back() },
+          ],
+        });
+      }
+    } catch (e) {
+      showDialog({
+        title: 'Could not save meal',
+        message: e.message,
+        variant: 'error',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ── SCANNER SCREEN ─────────────────────────────────────────────────────────
   if (scannerOpen) {
     return (
@@ -638,7 +750,7 @@ export default function MealLogScreen() {
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>Log a Meal</Text>
-            <Text style={styles.headerSub}>search · scan · log</Text>
+            <Text style={styles.headerSub}>search · scan · describe · log</Text>
           </View>
           {/* Barcode scan button */}
           <TouchableOpacity style={styles.scanBtn} onPress={openScanner}>
@@ -773,6 +885,120 @@ export default function MealLogScreen() {
               <Text style={styles.noResultsScanText}>Open Scanner</Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* ── AI Mode: Input ── */}
+        {aiMode && !aiResult && !selectedFood && (
+          <View style={styles.aiInputCard}>
+            <View style={styles.aiInputHeader}>
+              <View style={styles.aiIconWrap}>
+                <MaterialCommunityIcons name="creation" size={20} color="#a855f7" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.aiInputTitle}>Describe your meal</Text>
+                <Text style={styles.aiInputSub}>AI will estimate calories & macros</Text>
+              </View>
+              <TouchableOpacity onPress={() => { setAiMode(false); setAiDescription(''); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <MaterialCommunityIcons name="close" size={20} color="rgba(255,255,255,0.4)" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.aiTextInput}
+              placeholder={"e.g., 2 medium rotis, aloo gobi sabzi,\nand a cup of curd"}
+              placeholderTextColor="rgba(255,255,255,0.25)"
+              value={aiDescription}
+              onChangeText={setAiDescription}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              editable={!aiLoading}
+            />
+
+            <TouchableOpacity
+              style={[styles.aiAnalyzeBtn, (!aiDescription.trim() || aiLoading) && { opacity: 0.5 }]}
+              onPress={() => analyzeWithAI(aiDescription)}
+              disabled={!aiDescription.trim() || aiLoading}
+            >
+              <LinearGradient colors={['#a855f7', '#7c3aed']} style={styles.saveBtnGrad}>
+                {aiLoading
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <MaterialCommunityIcons name="creation" size={18} color="#fff" />
+                }
+                <Text style={styles.saveBtnText}>
+                  {aiLoading ? 'Analyzing your meal\u2026' : '\u2728 Analyze'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── AI Mode: Result ── */}
+        {aiMode && aiResult && !selectedFood && (
+          <Animated.View style={[styles.foodCard, { opacity: cardOpacity, transform: [{ translateY: cardAnim }] }]}>
+            <View style={styles.foodCardHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.foodCardName}>{aiResult.foodName}</Text>
+                <View style={styles.sourceBadgeRow}>
+                  <View style={[styles.sourceBadge, { backgroundColor: '#f3e8ff' }]}>
+                    <MaterialCommunityIcons name="creation" size={10} color="#a855f7" />
+                    <Text style={[styles.sourceBadgeText, { color: '#a855f7' }]}> AI Estimate</Text>
+                  </View>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.foodCardClose} onPress={() => { setAiResult(null); setAiMode(false); setAiDescription(''); }}>
+                <MaterialCommunityIcons name="close" size={20} color="rgba(255,255,255,0.4)" />
+              </TouchableOpacity>
+            </View>
+
+            {aiResult.breakdown ? (
+              <Text style={styles.aiBreakdownText}>{aiResult.breakdown}</Text>
+            ) : null}
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.calorieBlock}>
+              <LinearGradient colors={['#0a0202', '#150404']} style={styles.calorieGrad}>
+                <View style={styles.calorieMain}>
+                  <Text style={styles.calorieNum}>{aiResult.calories}</Text>
+                  <Text style={styles.calorieUnit}>kcal</Text>
+                </View>
+                <View style={styles.macroRow}>
+                  <View style={styles.macroCell}>
+                    <Text style={[styles.macroVal, { color: '#ff4030' }]}>{aiResult.protein}g</Text>
+                    <Text style={styles.macroLbl}>Protein</Text>
+                  </View>
+                  <View style={styles.macroDivider} />
+                  <View style={styles.macroCell}>
+                    <Text style={[styles.macroVal, { color: '#f39c12' }]}>{aiResult.carbs}g</Text>
+                    <Text style={styles.macroLbl}>Carbs</Text>
+                  </View>
+                  <View style={styles.macroDivider} />
+                  <View style={styles.macroCell}>
+                    <Text style={[styles.macroVal, { color: '#3498db' }]}>{aiResult.fat}g</Text>
+                    <Text style={styles.macroLbl}>Fat</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+
+            <TouchableOpacity style={styles.saveBtn} onPress={handleAISave} disabled={saving}>
+              <LinearGradient colors={['#a855f7', '#7c3aed']} style={styles.saveBtnGrad}>
+                {saving
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <MaterialCommunityIcons name="check-bold" size={18} color="#fff" />
+                }
+                <Text style={styles.saveBtnText}>
+                  {saving ? 'Saving\u2026' : `Log ${aiResult.calories} kcal to ${mealType}`}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.aiRetryBtn} onPress={() => setAiResult(null)}>
+              <MaterialCommunityIcons name="refresh" size={14} color="rgba(255,255,255,0.5)" />
+              <Text style={styles.aiRetryText}>Try again with different description</Text>
+            </TouchableOpacity>
+          </Animated.View>
         )}
 
         {/* ── Selected food card ── */}
@@ -919,7 +1145,7 @@ export default function MealLogScreen() {
         )}
 
         {/* ── Quick picks ── */}
-        {!searchQuery && !selectedFood && (
+        {!searchQuery && !selectedFood && !aiMode && (
           <View style={{ paddingBottom: 40 }}>
             {/* Scan CTA banner */}
             <TouchableOpacity style={styles.scanBanner} onPress={openScanner}>
@@ -935,7 +1161,20 @@ export default function MealLogScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* AI Snap CTA banner */}
+            {/* AI Describe CTA banner */}
+            <TouchableOpacity style={styles.aiDescribeBanner} onPress={() => { setAiMode(true); setAiResult(null); setAiDescription(''); }}>
+              <LinearGradient colors={['#0a0206', '#120410']} style={styles.scanBannerGrad}>
+                <View style={[styles.scanBannerIcon, { backgroundColor: 'rgba(168,85,247,0.12)', borderColor: 'rgba(168,85,247,0.25)' }]}>
+                  <MaterialCommunityIcons name="creation" size={28} color="#a855f7" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.scanBannerTitle}>Describe your meal</Text>
+                  <Text style={styles.scanBannerSub}>Type what you ate \u2014 AI estimates calories & macros instantly</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color="rgba(255,255,255,0.4)" />
+              </LinearGradient>
+            </TouchableOpacity>
+
             <Text style={styles.quickTitle}>Common foods</Text>
             <View style={styles.quickGrid}>
               {QUICK_PICKS.map(name => {
@@ -950,7 +1189,7 @@ export default function MealLogScreen() {
               })}
             </View>
 
-            <Text style={styles.sourceNote}>📚 ICMR-NIN · USDA FoodData Central · Open Food Facts</Text>
+            <Text style={styles.sourceNote}>📚 ICMR-NIN · USDA FoodData Central · Open Food Facts · Claude AI</Text>
           </View>
         )}
 
@@ -1106,4 +1345,17 @@ const styles = StyleSheet.create({
 
   offlinePill: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 18, marginBottom: 10, backgroundColor: 'rgba(255,136,68,0.08)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(255,136,68,0.15)', alignSelf: 'flex-start' },
   offlinePillText: { color: '#ff8844', fontSize: 11, fontWeight: '700' },
+
+  // AI Describe styles
+  aiDescribeBanner: { borderRadius: 18, overflow: 'hidden', marginBottom: 14, borderWidth: 1, borderColor: 'rgba(168,85,247,0.15)' },
+  aiInputCard: { backgroundColor: 'rgba(12,3,3,0.88)', borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(168,85,247,0.2)' },
+  aiInputHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  aiIconWrap: { width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(168,85,247,0.12)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(168,85,247,0.25)' },
+  aiInputTitle: { fontSize: 16, fontWeight: '800', color: '#ffe8d0' },
+  aiInputSub: { fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 },
+  aiTextInput: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 14, fontSize: 14, color: '#ffe8d0', minHeight: 80, borderWidth: 1, borderColor: 'rgba(168,85,247,0.2)', marginBottom: 14, lineHeight: 20 },
+  aiAnalyzeBtn: { borderRadius: 14, overflow: 'hidden' },
+  aiBreakdownText: { fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 18, marginBottom: 12, fontStyle: 'italic' },
+  aiRetryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, marginTop: 8 },
+  aiRetryText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
 });
