@@ -600,7 +600,7 @@ export default function MealLogScreen() {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-20250414',
+          model: 'claude-3-haiku-20240307',
           max_tokens: 300,
           system: 'You are a nutritionist AI. The user describes a meal they ate. Estimate the total calories and macronutrients. Return ONLY valid JSON in this exact format, no other text: {"foodName":"short meal name","calories":integer,"protein":number,"carbs":number,"fat":number,"breakdown":"item1 (~Xkcal), item2 (~Ykcal)"}. Use ICMR-NIN data for Indian foods. Be realistic with typical Indian home-cooked portions. Round calories to nearest integer, macros to 1 decimal.',
           messages: [{ role: 'user', content: description }],
@@ -608,9 +608,14 @@ export default function MealLogScreen() {
       });
 
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error.message || 'API Error');
+      }
+
       const text = data.content?.[0]?.text || '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No JSON found');
+      if (!jsonMatch) throw new Error('No JSON found in response');
       const parsed = JSON.parse(jsonMatch[0]);
 
       if (!parsed.calories || !parsed.foodName) throw new Error('Invalid response');
@@ -624,9 +629,10 @@ export default function MealLogScreen() {
         breakdown: parsed.breakdown || '',
       });
     } catch (error) {
+      console.log('AI Error:', error);
       showDialog({
         title: 'Could not analyze meal',
-        message: 'AI couldn\'t process that description. Try being more specific about portions and food items.',
+        message: `Error: ${error.message}. Please try again.`,
         variant: 'error',
       });
     } finally {
