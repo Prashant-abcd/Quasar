@@ -600,7 +600,7 @@ export default function MealLogScreen() {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-3-haiku-20240307',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 300,
           system: 'You are a nutritionist AI. The user describes a meal they ate. Estimate the total calories and macronutrients. Return ONLY valid JSON in this exact format, no other text: {"foodName":"short meal name","calories":integer,"protein":number,"carbs":number,"fat":number,"breakdown":"item1 (~Xkcal), item2 (~Ykcal)"}. Use ICMR-NIN data for Indian foods. Be realistic with typical Indian home-cooked portions. Round calories to nearest integer, macros to 1 decimal.',
           messages: [{ role: 'user', content: description }],
