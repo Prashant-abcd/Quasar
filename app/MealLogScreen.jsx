@@ -592,33 +592,138 @@ export default function MealLogScreen() {
   const analyzeWithAI = async (description) => {
     setAiLoading(true);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 300,
-          system: 'You are a nutritionist AI. The user describes a meal they ate. Estimate the total calories and macronutrients. Return ONLY valid JSON in this exact format, no other text: {"foodName":"short meal name","calories":integer,"protein":number,"carbs":number,"fat":number,"breakdown":"item1 (~Xkcal), item2 (~Ykcal)"}. Use ICMR-NIN data for Indian foods. Be realistic with typical Indian home-cooked portions. Round calories to nearest integer, macros to 1 decimal.',
-          messages: [{ role: 'user', content: description }],
-        }),
-      });
+      const geminiKey =
+        process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+      if (!geminiKey) {
+        throw new Error(
+          'Gemini API key is missing. Add EXPO_PUBLIC_GEMINI_API_KEY (or GEMINI_API_KEY) to your .env file and restart the dev server.'
+        );
+      }
+      console.log('Gemini key source:', process.env.EXPO_PUBLIC_GEMINI_API_KEY ? 'EXPO_PUBLIC_GEMINI_API_KEY' : process.env.GEMINI_API_KEY ? 'GEMINI_API_KEY' : 'none');
 
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error.message || 'API Error');
+      const jsonFormat = '{"foodName":"short meal name","calories":integer,"protein":number,"carbs":number,"fat":number,"breakdown":"item1 (~Xkcal), item2 (~Ykcal)"}';
+      const userPrompt = `You are a nutritionist AI. The user describes a meal they ate. Estimate total calories and macronutrients. Use ICMR-NIN data for Indian foods and be realistic with typical Indian home-cooked portions. Round calories to nearest integer, macros to 1 decimal.\n\nReturn ONLY raw JSON, no markdown, no preamble, no explanation. Use this exact format:\n${jsonFormat}\n\nMeal description: ${description}`;
+
+      const commonBody = {
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.2 },
+      };
+
+      let lastError = null;
+      let data = null;
+      let usedModel = null;
+
+      // 1) Try tuned / custom models from this Google AI Studio project first
+      try {
+        console.log('Fetching tuned models list...');
+        const tunedRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/tunedModels?key=${geminiKey}&pageSize=100`
+        );
+        const tunedList = await tunedRes.json();
+        console.log('Tuned models response:', JSON.stringify(tunedList).slice(0, 500));
+        if (!tunedRes.ok) {
+          console.log('Tuned models list error:', tunedList.error?.message);
+        } else if (!Array.isArray(tunedList.tunedModels)) {
+          console.log('No tunedModels array in response');
+        } else if (tunedList.tunedModels.length === 0) {
+          console.log('tunedModels array is empty');
+        } else {
+          console.log(`Found ${tunedList.tunedModels.length} tuned model(s)`);
+          for (const tunedModel of tunedList.tunedModels) {
+            const name = tunedModel.name; // e.g. "tunedModels/1234567890"
+            const displayName = tunedModel.displayName || name;
+            console.log(`Trying tuned model: ${displayName} (${name})`);
+            if (!name) continue;
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/${name}:generateContent?key=${geminiKey}`,
+              { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(commonBody) }
+            );
+            const payload = await res.json();
+            if (!payload.error) {
+              console.log(`Tuned model succeeded: ${name}`);
+              data = payload;
+              usedModel = name;
+              break;
+            }
+            lastError = payload.error?.message || 'API Error';
+            console.log(`Tuned model failed: ${name} -> ${lastError}`);
+          }
+        }
+      } catch (e) {
+        console.log('Tuned model list fetch failed:', e.message);
       }
 
-      const text = data.content?.[0]?.text || '';
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No JSON found in response');
-      const parsed = JSON.parse(jsonMatch[0]);
+      // 2) Fall back to base Gemini models if no tuned model worked
+      if (!data) {
+        const baseModels = [
+          // 1. Cheapest Flash-Lite models (minimal latency & cost)
+          { apiVersion: 'v1beta', model: 'gemini-flash-lite-latest' },
+          { apiVersion: 'v1beta', model: 'gemini-3.5-flash-lite' },
+          { apiVersion: 'v1beta', model: 'gemini-3.1-flash-lite' },
+          // 2. Standard Flash models (fast & low-cost, recommended by Google)
+          { apiVersion: 'v1beta', model: 'gemini-flash-latest' },
+          { apiVersion: 'v1beta', model: 'gemini-3.8-flash' },
+          { apiVersion: 'v1beta', model: 'gemini-3.5-flash' },
+          { apiVersion: 'v1beta', model: 'gemini-3-flash-preview' },
+          // 3. Pro models as fallback
+          { apiVersion: 'v1beta', model: 'gemini-pro-latest' },
+          { apiVersion: 'v1beta', model: 'gemini-3.1-pro-preview' },
+        ];
+        for (const { apiVersion, model } of baseModels) {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:generateContent?key=${geminiKey}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(commonBody) }
+          );
+          const payload = await res.json();
+          if (!payload.error) {
+            console.log(`Gemini model succeeded: ${apiVersion}/${model}`);
+            data = payload;
+            usedModel = `${apiVersion}/${model}`;
+            break;
+          }
+          const errCode = payload.error?.code;
+          const errMsg = payload.error?.message || 'API Error';
+          console.log(`Gemini model failed: ${apiVersion}/${model} (${errCode}) -> ${errMsg}`);
 
-      if (!parsed.calories || !parsed.foodName) throw new Error('Invalid response');
+          // Stop early if billing/prepayment credits or key permissions are the problem
+          if (errCode === 402 || errCode === 403) {
+            lastError = errMsg;
+            break;
+          }
+
+          // Prioritize informative errors so a 404 from a later fallback doesn't mask a real issue
+          if (!lastError || errCode !== 404) {
+            lastError = errMsg;
+          }
+        }
+      }
+
+      if (!data) {
+        throw new Error(lastError || 'All Gemini models failed');
+      }
+
+      console.log('Meal analysis used model:', usedModel);
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      console.log('Raw AI response text:', JSON.stringify(text).slice(0, 1000));
+      console.log('Full AI first candidate:', JSON.stringify(data.candidates?.[0]).slice(0, 1000));
+      if (!text) throw new Error('Empty response from AI');
+
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (e) {
+        // Try to extract JSON from markdown code blocks or inline JSON
+        const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const candidate = codeBlockMatch ? codeBlockMatch[1] : jsonMatch ? jsonMatch[0] : null;
+        if (!candidate) throw new Error('No JSON found in response');
+        parsed = JSON.parse(candidate);
+      }
+
+      if (!parsed || typeof parsed !== 'object' || !parsed.foodName || parsed.calories == null) {
+        throw new Error('Invalid response');
+      }
 
       setAiResult({
         foodName: parsed.foodName,

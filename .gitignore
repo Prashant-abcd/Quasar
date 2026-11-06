@@ -41,13 +41,26 @@ app-example
 # Claude Code
 .claude/
 
+# Gemini / Antigravity
+.agents/
+
 # Python
 __pycache__/
 *.pyc
 
+# IDE / Editor
+.idea/
+.vscode/
+
+# Firebase
+.firebase/
+google-services.json
+google-services*.json
+
 # Misc
 results/
 firebase/keys.txt
+deploymentQueries/
 
 # generated native folders
 /ios
@@ -63,3 +76,7 @@ firebase/keys.txt
 !android/app/debug.keystore
 
 credentials.json
+
+# Personal / non-project files
+*.docx
+resume*
